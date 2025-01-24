@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'package:isar/isar.dart';
+import 'dart:io';
 
-import '../database/db.dart';
-import '../model/notes.dart';
+import 'package:cloud_note/widgets/app_loader.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controller/notes_controller.dart';
 import 'notes_detail_screen.dart';
 import 'notes_edit_screen.dart';
 
@@ -14,6 +14,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('My Notes'),
         actions: [
           IconButton(
@@ -34,7 +35,7 @@ class HomeScreen extends StatelessWidget {
           )
         ],
       ),
-      body: const NotesList(),
+      body: NotesList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Get.to(NoteEditorScreen());
@@ -45,60 +46,111 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class NotesList extends StatefulWidget {
-  const NotesList({super.key});
+class NotesList extends StatelessWidget {
+  NotesList({super.key});
 
-  @override
-  State<NotesList> createState() => _NotesListState();
-}
-
-class _NotesListState extends State<NotesList> {
-  late List<Notes> notes;
-
-  @override
-  void initState() {
-    super.initState();
-    readUsers();
-  }
-
-  readUsers() async {
-    notes = await readAllNotes();
-    setState(() {});
-  }
+  final NotesController notesController = Get.put(NotesController());
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: notes.length, // Replace with actual count from database
-      itemBuilder: (context, index) {
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: ListTile(
-            title: Text(notes[index].title ?? ''),
-            subtitle: Text(notes[index].description ?? ''),
-            leading: const CircleAvatar(
-              backgroundColor: Colors.blueAccent,
-              child: Icon(Icons.note, color: Colors.white),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.share),
-                  onPressed: () {},
+    // Fetch notes when the screen loads
+    notesController.fetchAllNotes();
+
+    return Obx(
+      () => notesController.isFetchAllNotesLoading.value
+          ? const AppLoader()
+          : notesController.notesList.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No notes available.',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: notesController.notesList.length,
+                  itemBuilder: (context, index) {
+                    final note = notesController.notesList[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 4,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(10),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: note.imagePath != null &&
+                                  note.imagePath!.isNotEmpty
+                              ? Image.file(
+                                  File(note.imagePath!),
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                )
+                              : const Icon(
+                                  Icons.image,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                        ),
+                        title: Text(
+                          note.title?.isNotEmpty == true
+                              ? note.title!
+                              : 'Untitled Note',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 5),
+                            Text(
+                              note.description?.isNotEmpty == true
+                                  ? note.description!
+                                  : 'No description available.',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Date: ${note.date?.toLocal().toString().split(' ')[0] ?? 'Not set'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.share, color: Colors.blue),
+                              onPressed: () {
+                                // Share logic here
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Get.to(() => NoteDetailScreen(noteId: index));
+                        },
+                      ),
+                    );
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-            onTap: () {
-              Get.to(NoteDetailScreen(noteId: index));
-            },
-          ),
-        );
-      },
     );
   }
 }

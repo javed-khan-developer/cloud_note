@@ -50,8 +50,7 @@ class NoteDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Expanded(
               child: Center(
-                child: Image.asset(
-                    'assets/note_placeholder.png'), // Placeholder for the note image
+                child: Icon(Icons.image,size: 100,), // Placeholder for the note image
               ),
             ),
           ],
