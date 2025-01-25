@@ -119,6 +119,7 @@ class NotesList extends StatelessWidget {
                               icon: const Icon(Icons.share, color: Colors.blue),
                               onPressed: () {
                                 // Share logic here
+                                notesController.shareNotes(note);
                               },
                             ),
                             IconButton(

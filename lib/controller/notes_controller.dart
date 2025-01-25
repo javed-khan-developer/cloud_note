@@ -4,6 +4,7 @@ import 'package:cloud_note/screen/notes_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../database/db.dart';
 import '../model/notes.dart';
@@ -275,6 +276,34 @@ class NotesController extends GetxController {
     }
 
     notesList.assignAll(sortedNotes);
+  }
+
+  shareNotes(Notes note) async {
+    // Prepare the content to share
+    String shareContent = '''
+    Title: ${note.title ?? "Untitled Note"}
+    Description: ${note.description ?? "No description available."}
+    Date: ${note.date?.toLocal().toString().split(' ')[0] ?? "Not set"}
+    ''';
+    try {
+      // If the note has an image, include it
+      if (note.imagePath != null && note.imagePath!.isNotEmpty) {
+        // Share with image
+        await Share.shareXFiles(
+          [XFile('${note.imagePath}')],
+          text: shareContent,
+        );
+      } else {
+        // Share without image
+        await Share.share(shareContent);
+      }
+    } catch (e, st) {
+      AppSnackBar.showSnackBar(
+        false,
+        'Failed to share note. Please try again.',
+      );
+      log('Error creating note: $e-----$st');
+    }
   }
 
   /// Clear Data

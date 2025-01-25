@@ -1,3 +1,4 @@
+import 'package:cloud_note/model/notes.dart';
 import 'package:flutter/material.dart';
 import '../controller/notes_controller.dart';
 import 'notes_edit_screen.dart';
@@ -24,14 +25,15 @@ class NoteDetailScreen extends StatelessWidget {
             onPressed: () {
               Get.to(NoteEditorScreen(
                 isNavigatedFromEditScreen: true,
-                noteId:noteId,
+                noteId: noteId,
               )); // Navigate to editor screen
             },
           ),
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              // Add share functionality here
+              notesController
+                  .shareNotes(notesController.currentNote.value ?? Notes());
             },
           ),
         ],
