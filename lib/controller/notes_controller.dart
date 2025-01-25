@@ -1,12 +1,14 @@
 import 'dart:developer';
-import 'package:cloud_note/model/notes.dart';
-import 'package:cloud_note/screen/home_screen.dart';
-import 'package:cloud_note/utils/app_snackbar.dart';
+
+import 'package:cloud_note/screen/notes_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../database/db.dart';
+import '../model/notes.dart';
+import '../screen/home_screen.dart';
+import '../utils/app_snackbar.dart';
 
 class NotesController extends GetxController {
   TextEditingController titleController = TextEditingController();
@@ -14,6 +16,7 @@ class NotesController extends GetxController {
 
   RxBool isCreatesNotesLoading = false.obs;
   RxBool isFetchAllNotesLoading = false.obs;
+  RxBool isUpdateNotesLoading = false.obs;
 
   // To hold the selected image path
   RxString selectedImagePath = ''.obs;
@@ -24,7 +27,10 @@ class NotesController extends GetxController {
   final ImagePicker _imagePicker = ImagePicker();
 
   RxList<Notes> notesList = <Notes>[].obs; // Reactive list to store notes
+  Rx<Notes?> currentNote =
+      Rx<Notes?>(null); // Reactive variable for the current note
 
+  /// Create Note
   createNote({
     required Notes notes,
   }) {
@@ -40,31 +46,34 @@ class NotesController extends GetxController {
 
     isCreatesNotesLoading.value = true;
     try {
-      final response = createNotes(notes);
-      AppSnackBar.showSnackBar(
-        true,
-        'Note created successfully!',
-      );
-      isCreatesNotesLoading.value = false;
-      fetchAllNotes(); // Refresh list after creation
-      clearData();
-      Get.off(const HomeScreen());
-    } catch (e, st) {
-      AppSnackBar.showSnackBar(
-        false,
-        'Failed to create note. Please try again.',
-      );
-      log('catch createNotes $e-----$st');
+      DatabaseService.createNotes(notes).then((_) {
+        AppSnackBar.showSnackBar(
+          true,
+          'Note created successfully!',
+        );
+        fetchAllNotes(); // Refresh list after creation
+        clearData();
+        Get.off(const HomeScreen());
+      }).catchError((e) {
+        AppSnackBar.showSnackBar(
+          false,
+          'Failed to create note. Please try again.',
+        );
+        log('Error creating note: $e');
+      }).whenComplete(() => isCreatesNotesLoading.value = false);
+    } catch (e) {
+      log('Unexpected error: $e');
       isCreatesNotesLoading.value = false;
     }
   }
 
-  // Allow user to choose the media source
+  /// Choose Media Source
   chooseMediaSource() async {
     await Get.defaultDialog(
       title: 'Choose Media Source',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+      content: Row(
+        // mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           ElevatedButton(
             onPressed: () {
@@ -85,7 +94,7 @@ class NotesController extends GetxController {
     );
   }
 
-  // Capture photo from the camera
+  /// Capture Photo from Camera
   _capturePhotoFromCamera() async {
     try {
       final XFile? photo =
@@ -99,7 +108,7 @@ class NotesController extends GetxController {
     }
   }
 
-  // Pick image from the gallery
+  /// Pick Image from Gallery
   _pickImageFromGallery() async {
     try {
       final XFile? image =
@@ -113,7 +122,7 @@ class NotesController extends GetxController {
     }
   }
 
-  // Open a date picker and update the selected date
+  /// Open Date Picker
   pickDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -127,11 +136,11 @@ class NotesController extends GetxController {
     }
   }
 
-  //Fetch all notes from the database
+  /// Fetch All Notes
   Future<void> fetchAllNotes() async {
     try {
       isFetchAllNotesLoading.value = true;
-      final notes = await readAllNotes();
+      final notes = await DatabaseService.readAllNotes();
       notesList.assignAll(notes); // Populate reactive list with fetched notes
       isFetchAllNotesLoading.value = false;
     } catch (e) {
@@ -143,7 +152,100 @@ class NotesController extends GetxController {
     }
   }
 
-  // Clear all data after creating the note
+  /// Fetch updated Note
+  Future<void> fetchUpdatedNoteById(int id) async {
+    try {
+      // Fetch the updated note from the database
+      final updatedNote = await DatabaseService.readNote(id);
+
+      // Assign it to the currentNote reactive variable
+      currentNote.value = updatedNote;
+
+      log('Updated note fetched successfully: $updatedNote');
+    } catch (e) {
+      AppSnackBar.showSnackBar(
+        false,
+        'Failed to fetch updated note. Please try again later.',
+      );
+      log('Error fetching updated note: $e');
+    }
+  }
+
+  /// Update Note
+  updateNote({
+    required int id,
+    String? title,
+    String? description,
+    DateTime? date,
+    String? imagePath,
+  }) {
+    isUpdateNotesLoading.value = true;
+
+    DatabaseService.updateNotes(
+      id,
+      title: title,
+      description: description,
+      date: date,
+      imagePath: imagePath,
+    ).then((_) {
+      AppSnackBar.showSnackBar(
+        true,
+        'Note updated successfully!',
+      );
+      fetchUpdatedNoteById(id);
+      fetchAllNotes();
+      clearData();
+      Get.off(NoteDetailScreen(noteId: id));
+    }).catchError((e) {
+      AppSnackBar.showSnackBar(
+        false,
+        'Failed to update note. Please try again.',
+      );
+      log('Error updating note: $e');
+    }).whenComplete(() => isUpdateNotesLoading.value = false);
+  }
+
+  /// Delete Note
+  Future<void> deleteNote(int id) async {
+    bool? confirmed = await Get.defaultDialog<bool>(
+      title: 'Are you sure you want to delete this note?',
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Get.back(result: true),
+              child: Text('Delete'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed ?? false) {
+      DatabaseService.deleteNote(id).then((_) {
+        AppSnackBar.showSnackBar(
+          true,
+          'Note deleted successfully!',
+        );
+        fetchAllNotes(); // Refresh list after deletion
+      }).catchError((e) {
+        AppSnackBar.showSnackBar(
+          false,
+          'Failed to delete note. Please try again.',
+        );
+        log('Error deleting note: $e');
+      });
+    }
+  }
+
+  /// Clear Data
   clearData() {
     titleController.clear();
     descriptionController.clear();

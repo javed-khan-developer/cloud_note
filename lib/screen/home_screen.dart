@@ -38,7 +38,10 @@ class HomeScreen extends StatelessWidget {
       body: NotesList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.to(NoteEditorScreen());
+          Get.to(NoteEditorScreen(
+            isNavigatedFromEditScreen: false,
+            noteId: -1,
+          ));
         },
         child: const Icon(Icons.add),
       ),
@@ -140,12 +143,14 @@ class NotesList extends StatelessWidget {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {},
+                              onPressed: () {
+                                notesController.deleteNote(note.id);
+                              },
                             ),
                           ],
                         ),
                         onTap: () {
-                          Get.to(() => NoteDetailScreen(noteId: index));
+                          Get.to(() => NoteDetailScreen(noteId: note.id));
                         },
                       ),
                     );

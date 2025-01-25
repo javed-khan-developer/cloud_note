@@ -9,15 +9,23 @@ import '../model/notes.dart';
 
 class NoteEditorScreen extends StatelessWidget {
   final NotesController notesController = Get.put(NotesController());
-  final Notes? note; // Optional Note object for editing
+  final bool isNavigatedFromEditScreen;
+  final int noteId;
 
-  NoteEditorScreen({super.key, this.note}) {
+  NoteEditorScreen({
+    super.key,
+    required this.isNavigatedFromEditScreen,
+    required this.noteId,
+  }) {
     // Pre-fill data if editing
-    if (note != null) {
+    if (isNavigatedFromEditScreen) {
+      final note = notesController.currentNote.value;
       notesController.titleController.text = note!.title ?? '';
-      notesController.descriptionController.text = note!.description ?? '';
-      notesController.selectedDate.value = note!.date ?? DateTime.now();
-      notesController.selectedImagePath.value = note!.imagePath ?? '';
+      notesController.descriptionController.text = note.description ?? '';
+      notesController.selectedDate.value = note.date ?? DateTime.now();
+      notesController.selectedImagePath.value = note.imagePath ?? '';
+    } else {
+      notesController.clearData();
     }
   }
 
@@ -25,7 +33,7 @@ class NoteEditorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(note == null ? 'Create Note' : 'Edit Note'),
+        title: Text(isNavigatedFromEditScreen ? 'Edit Note' : 'Create Note'),
         actions: [
           Obx(
             () => notesController.isCreatesNotesLoading.value
@@ -41,16 +49,21 @@ class NoteEditorScreen extends StatelessWidget {
                         ..date = notesController.selectedDate.value
                         ..imagePath = notesController.selectedImagePath.value;
 
-                      if (note == null) {
+                      if (!isNavigatedFromEditScreen) {
                         // Create new note
                         await notesController.createNote(notes: newNote);
                       } else {
                         // Update existing note
+                        await notesController.updateNote(
+                          id: noteId,
+                          title: notesController.titleController.text,
+                          description:
+                              notesController.descriptionController.text,
+                          date: notesController.selectedDate.value ??
+                              DateTime.now(),
+                          imagePath: notesController.selectedImagePath.value,
+                        );
                       }
-
-                      // Refresh the list and navigate back
-                      await notesController.fetchAllNotes();
-                      Get.back();
                     },
                     tooltip: 'Save Note',
                   ),
