@@ -4,6 +4,7 @@ import 'package:cloud_note/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/notes_controller.dart';
+import '../widgets/home_app_bar.dart';
 import 'notes_detail_screen.dart';
 import 'notes_edit_screen.dart';
 
@@ -13,28 +14,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('My Notes'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'sort',
-                child: Text('Sort Notes'),
-              ),
-              const PopupMenuItem(
-                value: 'filter',
-                child: Text('Filter Notes'),
-              ),
-            ],
-          )
-        ],
-      ),
+      appBar: const NotesAppBar(),
       body: NotesList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

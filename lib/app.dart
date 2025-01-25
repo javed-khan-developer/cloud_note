@@ -8,6 +8,7 @@ class NotesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Offline Notes',
       theme: ThemeData(
         primarySwatch: Colors.blue,

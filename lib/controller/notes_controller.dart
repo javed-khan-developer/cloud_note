@@ -13,10 +13,12 @@ import '../utils/app_snackbar.dart';
 class NotesController extends GetxController {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   RxBool isCreatesNotesLoading = false.obs;
   RxBool isFetchAllNotesLoading = false.obs;
   RxBool isUpdateNotesLoading = false.obs;
+  RxBool isSearching = false.obs;
 
   // To hold the selected image path
   RxString selectedImagePath = ''.obs;
@@ -52,7 +54,7 @@ class NotesController extends GetxController {
           'Note created successfully!',
         );
         fetchAllNotes(); // Refresh list after creation
-        clearData();
+        resetNotesData();
         Get.off(const HomeScreen());
       }).catchError((e) {
         AppSnackBar.showSnackBar(
@@ -194,7 +196,7 @@ class NotesController extends GetxController {
       );
       fetchUpdatedNoteById(id);
       fetchAllNotes();
-      clearData();
+      resetNotesData();
       Get.off(NoteDetailScreen(noteId: id));
     }).catchError((e) {
       AppSnackBar.showSnackBar(
@@ -245,11 +247,49 @@ class NotesController extends GetxController {
     }
   }
 
+  /// Function to handle search
+  void searchNotes(String query) {
+    if (query.isEmpty) {
+      fetchAllNotes(); // Reset to full list if search query is empty
+    } else {
+      final filteredNotes = notesList.where((note) {
+        final title = note.title?.toLowerCase() ?? '';
+        final description = note.description?.toLowerCase() ?? '';
+        final searchText = query.toLowerCase();
+        return title.contains(searchText) || description.contains(searchText);
+      }).toList();
+
+      notesList.assignAll(filteredNotes);
+    }
+  }
+
+  /// Function to handle sorting
+  void sortNotes(String criteria) {
+    final sortedNotes = [...notesList];
+
+    if (criteria == 'date') {
+      sortedNotes.sort((a, b) => b.date!.compareTo(a.date!)); // Newest first
+    } else if (criteria == 'name') {
+      sortedNotes.sort((a, b) =>
+          (a.title ?? '').compareTo(b.title ?? '')); // Alphabetical order
+    }
+
+    notesList.assignAll(sortedNotes);
+  }
+
   /// Clear Data
-  clearData() {
+  resetNotesData() {
     titleController.clear();
     descriptionController.clear();
     selectedImagePath.value = '';
     selectedDate.value = null;
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    searchController.dispose();
+    titleController.dispose();
+    descriptionController.dispose();
   }
 }

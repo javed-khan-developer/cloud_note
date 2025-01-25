@@ -25,7 +25,7 @@ class NoteEditorScreen extends StatelessWidget {
       notesController.selectedDate.value = note.date ?? DateTime.now();
       notesController.selectedImagePath.value = note.imagePath ?? '';
     } else {
-      notesController.clearData();
+      notesController.resetNotesData();
     }
   }
 
