@@ -6,9 +6,9 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../database/db.dart';
 import '../model/notes.dart';
 import '../screen/home_screen.dart';
+import '../services/notes_services.dart';
 import '../utils/app_snackbar.dart';
 
 class NotesController extends GetxController {
@@ -49,7 +49,7 @@ class NotesController extends GetxController {
 
     isCreatesNotesLoading.value = true;
     try {
-      DatabaseService.createNotes(notes).then((_) {
+      NotesService.createNotes(notes).then((_) {
         AppSnackBar.showSnackBar(
           true,
           'Note created successfully!',
@@ -143,7 +143,7 @@ class NotesController extends GetxController {
   Future<void> fetchAllNotes() async {
     try {
       isFetchAllNotesLoading.value = true;
-      final notes = await DatabaseService.readAllNotes();
+      final notes = await NotesService.readAllNotes();
       notesList.assignAll(notes); // Populate reactive list with fetched notes
       isFetchAllNotesLoading.value = false;
     } catch (e) {
@@ -159,7 +159,7 @@ class NotesController extends GetxController {
   Future<void> fetchUpdatedNoteById(int id) async {
     try {
       // Fetch the updated note from the database
-      final updatedNote = await DatabaseService.readNote(id);
+      final updatedNote = await NotesService.readNote(id);
 
       // Assign it to the currentNote reactive variable
       currentNote.value = updatedNote;
@@ -184,7 +184,7 @@ class NotesController extends GetxController {
   }) {
     isUpdateNotesLoading.value = true;
 
-    DatabaseService.updateNotes(
+    NotesService.updateNotes(
       id,
       title: title,
       description: description,
@@ -232,7 +232,7 @@ class NotesController extends GetxController {
     );
 
     if (confirmed ?? false) {
-      DatabaseService.deleteNote(id).then((_) {
+      NotesService.deleteNote(id).then((_) {
         AppSnackBar.showSnackBar(
           true,
           'Note deleted successfully!',

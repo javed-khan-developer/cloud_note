@@ -1,12 +1,12 @@
+import 'package:cloud_note/services/db_services.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
-import 'database/db.dart';
 
 void main() {
   DatabaseService.instance;
 
-  runApp(const NotesApp());
+  runApp( NotesApp());
 }
 
 
