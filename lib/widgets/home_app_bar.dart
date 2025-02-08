@@ -1,3 +1,4 @@
+import 'package:cloud_note/screen/setting_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/notes_controller.dart';
@@ -63,6 +64,8 @@ class NotesAppBarState extends State<NotesAppBar> {
                 notesController.sortNotes('date');
               } else if (value == 'sort_name') {
                 notesController.sortNotes('name');
+              } else if (value == 'language') {
+                Get.to(const SettingScreen());
               }
             },
             itemBuilder: (context) => [
@@ -73,6 +76,10 @@ class NotesAppBarState extends State<NotesAppBar> {
               const PopupMenuItem(
                 value: 'sort_name',
                 child: Text('Sort By Name'),
+              ),
+              const PopupMenuItem(
+                value: 'language',
+                child: Text('Select Language'),
               ),
             ],
           ),

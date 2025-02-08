@@ -7,6 +7,7 @@ import '../controller/notes_controller.dart';
 import '../widgets/home_app_bar.dart';
 import 'notes_detail_screen.dart';
 import 'notes_edit_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -43,9 +44,9 @@ class NotesList extends StatelessWidget {
       () => notesController.isFetchAllNotesLoading.value
           ? const AppLoader()
           : notesController.notesList.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'No notes available.',
+                    AppLocalizations.of(context)!.noNotes, // Localized text
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
                 )
@@ -81,7 +82,7 @@ class NotesList extends StatelessWidget {
                         title: Text(
                           note.title?.isNotEmpty == true
                               ? note.title!
-                              : 'Untitled Note',
+                              :  AppLocalizations.of(context)!.untitledNote,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -94,7 +95,7 @@ class NotesList extends StatelessWidget {
                             Text(
                               note.description?.isNotEmpty == true
                                   ? note.description!
-                                  : 'No description available.',
+                                  : AppLocalizations.of(context)!.noDescription,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -104,7 +105,10 @@ class NotesList extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Date: ${note.date?.toLocal().toString().split(' ')[0] ?? 'Not set'}',
+                              AppLocalizations.of(context)!.date({
+                                note.date?.toLocal().toString().split(' ')[0] ??
+                                    'Not set'
+                              }),
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
