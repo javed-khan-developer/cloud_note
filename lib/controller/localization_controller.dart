@@ -17,15 +17,13 @@ class LocalizationController extends GetxController {
     String savedLanguage = await UserSettingsService.getLanguage();
     locale.value = Locale(savedLanguage, '');
     log('savedLanguage $savedLanguage');
-    Get.updateLocale(locale.value); // ✅ Force locale update
-
+    Get.updateLocale(locale.value); // Force locale update
   }
 
   void changeLanguage(String languageCode) async {
     locale.value = Locale(languageCode, '');
     await UserSettingsService.saveLanguage(languageCode);
     log('changeLanguage $languageCode');
-    Get.updateLocale(locale.value); // ✅ Force update
-
+    Get.updateLocale(locale.value);
   }
 }

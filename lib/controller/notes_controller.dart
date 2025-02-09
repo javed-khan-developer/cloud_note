@@ -1,10 +1,12 @@
 import 'dart:developer';
 
+import 'package:cloud_note/controller/localization_controller.dart';
 import 'package:cloud_note/screen/notes_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:translator/translator.dart';
 
 import '../model/notes.dart';
 import '../screen/home_screen.dart';
@@ -28,10 +30,20 @@ class NotesController extends GetxController {
   Rx<DateTime?> selectedDate = Rx<DateTime?>(null);
 
   final ImagePicker _imagePicker = ImagePicker();
+  final translator = GoogleTranslator(); //  Initialize Translator
 
   RxList<Notes> notesList = <Notes>[].obs; // Reactive list to store notes
   Rx<Notes?> currentNote =
       Rx<Notes?>(null); // Reactive variable for the current note
+
+  String get locale =>
+      Get.find<LocalizationController>().locale.value.languageCode;
+
+  @override
+  void onInit() {
+    super.onInit();
+    log(" Initialized Language (From Storage): $locale"); //  Safe initialization
+  }
 
   /// Create Note
   createNote({
@@ -144,7 +156,23 @@ class NotesController extends GetxController {
     try {
       isFetchAllNotesLoading.value = true;
       final notes = await NotesService.readAllNotes();
-      notesList.assignAll(notes); // Populate reactive list with fetched notes
+      // Debugging: Check saved language
+      log('fetchAllNotes savedLanguage ${locale}');
+
+      // Translate all notes before displaying
+      final translatedNotes = await Future.wait(notes.map((note) async {
+        return await _translateNote(note);
+      }));
+
+      // Debugging: Log translated notes
+      for (var note in translatedNotes) {
+        log('Translated Title: ${note.title}');
+        log('Translated Description: ${note.description}');
+      }
+
+      notesList.assignAll(
+          translatedNotes); // Populate reactive list with translated notes
+
       isFetchAllNotesLoading.value = false;
     } catch (e) {
       AppSnackBar.showSnackBar(
@@ -154,6 +182,37 @@ class NotesController extends GetxController {
       isFetchAllNotesLoading.value = false;
     }
   }
+
+  // Translate each note
+  Future<Notes> _translateNote(Notes note) async {
+    log(" Translating Note: ${note.title} | Language: ${locale}");
+
+    if (locale == 'en') {
+      log(" No Translation Needed (Already English)");
+      return note;
+    }
+
+    try {
+      final translatedTitle =
+          await translator.translate(note.title ?? "", to: locale);
+      final translatedDesc =
+          await translator.translate(note.description ?? "", to: locale);
+
+      log(" Translated Title: ${translatedTitle.text}");
+      log(" Translated Desc: ${translatedDesc.text}");
+
+      return Notes()
+        ..id = note.id
+        ..title = translatedTitle.text
+        ..description = translatedDesc.text
+        ..date = note.date
+        ..imagePath = note.imagePath;
+    } catch (e) {
+      log("Translation Error: $e");
+      return note; // Return original note if translation fails
+    }
+  }
+
 
   /// Fetch updated Note
   Future<void> fetchUpdatedNoteById(int id) async {
@@ -249,15 +308,19 @@ class NotesController extends GetxController {
   }
 
   /// Function to handle search
-  void searchNotes(String query) {
+  void searchNotes(String query) async {
     if (query.isEmpty) {
       fetchAllNotes(); // Reset to full list if search query is empty
+      return;
     } else {
+      final translatedQuery = await translator.translate(query,
+          to: 'en'); // Translate search text to English
+
       final filteredNotes = notesList.where((note) {
         final title = note.title?.toLowerCase() ?? '';
         final description = note.description?.toLowerCase() ?? '';
-        final searchText = query.toLowerCase();
-        return title.contains(searchText) || description.contains(searchText);
+        return title.contains(translatedQuery.text.toLowerCase()) ||
+            description.contains(translatedQuery.text.toLowerCase());
       }).toList();
 
       notesList.assignAll(filteredNotes);
